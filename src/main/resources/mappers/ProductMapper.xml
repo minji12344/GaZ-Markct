@@ -1,0 +1,215 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+  <mapper namespace="kr.co.dong.Product">
+  
+  
+  <!-- 상품 전체목록수 -->
+  <select id="plist" resultType="java.lang.Integer">
+ 	 select count(*) from product
+  </select>
+  
+    <!-- 상품 삭제 목록 수 -->
+  <select id="pdellist" resultType="ProductDTO">
+  	select *
+  	from product
+  	where pdel = 1
+  	order by pcode desc
+  </select>
+  
+  
+  <!--  선택조회(글읽기)   -->
+  <select id="pdetail" parameterType="java.lang.Integer" resultType="ProductDTO">
+  	select *
+  	from product 
+  	where pcode = #{pcode}  	
+  </select>
+  
+<!--   선택조회(등록된 이미지 불러오기) -->
+   <select id="pdetailimg" parameterType="java.lang.Integer" resultType="ImgDTO">
+  	select * 
+  	from imagetable
+  	where imgfromno = #{imgfromno}
+  </select>
+ 
+ <!-- 상품 등록하기 -->
+  
+  <insert id="pinsert" parameterType="ProductDTO">
+  	insert into product(pname, pprice, pcount, pbuycount, pdate, plimit, pimage, ptcodemain, ptcodesub, pcontent, pdel, puserid) 
+	values(#{pname}, #{pprice}, #{pcount}, #{pbuycount}, now(), now(), #{pimage}, #{ptcodemain}, #{ptcodesub}, #{pcontent}, 0, #{puserid})
+  </insert>
+  
+
+ <!-- 이미지 등록하기 -->
+  
+  <insert id="pimageinsert" parameterType="ImgDTO">
+  	insert into imagetable(imgfrom, imgfromno, imgrealpath, imgviewpath) 
+	values(#{imgfrom}, #{imgfromno}, #{imgrealpath}, #{imgviewpath})
+  </insert>
+  
+  <!-- 상품 수정하기 -->
+  
+  <update id="pupdate" parameterType="ProductDTO">
+  update product
+  set
+  pname = #{pname}, pprice=#{pprice}, pcount=#{pcount}, plimit= now(), ptcodemain = #{ptcodemain}, sptcodesub = #{ptcodesub}, pcontent = #{pcontent}
+  where pcode=#{pcode}
+  </update>
+  
+  <!-- 상품 삭제하기 -->
+  
+  <update id="pdelete">
+  	update product
+  	set
+  	pdel= 1
+  	where pcode = #{pcode}
+  </update>
+  
+    
+    <!-- 상품 삭제 복구하기 -->
+  
+  <update id="pdeldelete">
+  	update product
+  	set
+  	pdel= 0
+  	where pcode = #{pcode}
+  </update>
+  
+  
+  <!-- 총 게시글 갯수 출력 -->
+<select id="countProduct" resultType="java.lang.Integer">
+	select count(*) from product
+</select>
+
+  <!-- 게시글 최대번호 확인 -->
+<select id="MaxProduct" resultType="java.lang.Integer">
+	select IFNULL(max(pcode),0) from product
+</select>
+
+  <!-- 전체목록수(페이징 처리) -->
+	<select id="selectProduct" resultType="ProductDTO">
+		select
+		@rownum:=@rownum+1 as no, product.*
+		from product
+		where (@rownum:=0)=0 and pdel = 0
+		order by pcode desc
+		limit #{start}, #{cntPerPage}
+		
+	</select>
+  
+  
+  
+  
+  
+ <!-- 상품 코드로 검색할 상품 개수  (대분류)-->
+  
+  <select id="productSort" parameterType="java.lang.Integer" resultType="java.lang.Integer">
+  	select count(*)
+  	from product
+  	where pdel = 0
+  	and ptcodemain=#{ptcodemain}
+  </select>
+  
+   <!-- 특정 속성으로 검색한 상품  -->
+  
+  <select id="productSortList" parameterType="PagingSortPVO" resultType="ProductDTO">
+  	select pcode, pname, pprice, pcount, pdate, plimit, ptcodemain, pimage
+  	from product
+  	where pdel = 0
+  	and ptcodemain=#{ptcodemain}
+  	order by pcode desc
+  	limit #{start}, #{cntPerPage}
+  </select>
+ 
+ 
+ 
+   
+ <!-- 상품 코드로 검색할 상품 개수  (중분류)-->
+  
+  <select id="productSort2" parameterType="java.lang.Integer" resultType="java.lang.Integer">
+  	select count(*)
+  	from product
+  	where pdel = 0
+  	and ptcodesub=#{ptcodesub}
+  </select>
+  
+   <!-- 특정 속성으로 검색한 상품 (중분류)  -->
+  
+  <select id="productSortList2" parameterType="PagingSortPVO" resultType="ProductDTO">
+  	select pcode, pname, pprice, pcount, pdate, plimit, ptcodesub, pimage
+  	from product
+  	where pdel = 0
+  	and ptcodesub=#{ptcodesub}
+  	order by pcode desc
+  	limit #{start}, #{cntPerPage}
+  </select>
+ 
+    <!-- 속성 게시글 갯수 출력 -->
+<select id="countProduct2" parameterType="PagingPVO" resultType="java.lang.Integer">
+	select count(*) from product
+	where 
+	pname like CONCAT('%',#{keyWord},'%') 
+	and pdel = 0
+</select>
+  
+<!-- 검색하기 -->
+  <select id="psearchlist" resultType="ProductDTO" parameterType="PagingPVO">
+  select pcode, pname, pprice, pcount, pdate, plimit
+  from product
+  where 
+  pname like CONCAT('%',#{keyWord},'%')
+  or pcontent like CONCAT('%',#{keyWord},'%')
+  and pdel = 0
+  order by pcode desc
+limit #{start}, #{cntPerPage}
+
+  </select>
+  
+<!-- 게시글 번호에 해당하는 모든 댓글 조회 SQL -->
+	<select id="pGetDetail" parameterType="java.lang.Integer" resultType="ProductReply">
+		select *
+		from productreply
+		where pcode = #{pcode}
+		order by preno desc
+	</select>
+
+	<!-- 댓글 쓰기 -->
+	<insert id="pReply" parameterType="ProductReply">
+		insert into
+		productreply(pwriter,pmemo,predate,pcode)
+		values(#{pwriter},#{pmemo},curdate(),#{pcode})
+	</insert>
+	
+	<!-- 댓글 수정 -->
+	<update id="pReplyUpdate" parameterType="ProductReply">
+		update productreply
+		set
+		pwriter = #{pwriter},
+		pmemo = #{pmemo},
+		predate = curdate()
+		where preno = #{preno}
+	</update>
+
+	<select id="preplydetail" parameterType="java.lang.Integer" resultType="ProductReply">
+  		select *
+  		from productreply
+  		where preno = #{preno}
+  	</select>
+  	
+  	<!-- 댓글 삭제 -->
+  	<delete id="pReplyDelete" parameterType="java.lang.Integer">
+		delete from productreply
+		where preno = #{preno}
+  	</delete>
+  
+    
+	<!-- 상품구매 시 구매 수량 증가  -->
+	<update id = "BuycountUpdate" parameterType="ProductDTO">
+		update product
+		set pbuycount = pbuycount + #{pbuycount}
+		where pcode = #{pcode}
+	</update>
+
+  
+  </mapper>
